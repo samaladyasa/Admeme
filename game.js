@@ -68,21 +68,55 @@ function nextSequence(){
     $("#level-title").text("Level " + level);
     let randomNumber = Math.floor(Math.random() * 4);
     let randomChosenColor = buttonColors[randomNumber];
-        gamePattern.push(randomChosenColor);
+    gamePattern.push(randomChosenColor);
 
     $("#"+randomChosenColor).fadeIn(100).fadeOut(100).fadeIn(100);
     playSound(randomChosenColor);
 }
 
 function playSound(name){
-    let sound = new Audio("sounds/"+name+".mp3");
-    sound.play();
+    // Create audio context (use singleton to avoid browser blocking)
+    if (!window.audioContext) {
+        window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
+    const ctx = window.audioContext;
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    // Frequency map for each color (Hz) - musical notes
+    const frequencies = {
+        'red': 261.63,    // C4
+        'green': 329.63,  // E4
+        'blue': 392.00,   // G4
+        'yellow': 523.25  // C5
+    };
+    
+    if(name === 'wrong'){
+        // Play a low buzz for wrong answer
+        oscillator.frequency.value = 100;
+        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.5);
+    } else {
+        // Play the color tone
+        oscillator.frequency.value = frequencies[name] || 440;
+        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.5);
+    }
 }
 
 function startOver(){
     level = 0;
     gamePattern = [];
     started = false;
+    $("#start-btn").show();
 }
 
 function animatePress(currentColor){
