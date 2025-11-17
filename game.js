@@ -1,3 +1,91 @@
+// ===== PARTICLE EFFECTS SYSTEM =====
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.velocity = {
+            x: (Math.random() - 0.5) * 8,
+            y: (Math.random() - 0.5) * 8
+        };
+        this.alpha = 1;
+        this.decay = Math.random() * 0.03 + 0.015;
+        this.size = Math.random() * 4 + 2;
+    }
+
+    update() {
+        this.x += this.velocity.x;
+        this.y += this.velocity.y;
+        this.velocity.y += 0.1; // gravity
+        this.velocity.x *= 0.98; // air resistance
+        this.alpha -= this.decay;
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+let particles = [];
+let particleCanvas = document.getElementById('particle-canvas');
+let particleCtx = particleCanvas ? particleCanvas.getContext('2d') : null;
+
+// Set canvas size
+if (particleCanvas) {
+    particleCanvas.width = window.innerWidth;
+    particleCanvas.height = window.innerHeight;
+    window.addEventListener('resize', function() {
+        particleCanvas.width = window.innerWidth;
+        particleCanvas.height = window.innerHeight;
+    });
+}
+
+// Animation loop for particles
+function animateParticles() {
+    if (!particleCtx) return;
+    
+    particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+    
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw(particleCtx);
+        
+        if (particles[i].alpha <= 0) {
+            particles.splice(i, 1);
+        }
+    }
+    
+    if (particles.length > 0) {
+        requestAnimationFrame(animateParticles);
+    }
+}
+
+function createParticles(x, y, color) {
+    const count = Math.floor(Math.random() * 15 + 20); // 20-35 particles
+    for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, color));
+    }
+    animateParticles();
+}
+
+// Get color for particles
+function getColorForButton(buttonId) {
+    const colorMap = {
+        'red': '#ff4444',
+        'green': '#44ff44',
+        'blue': '#4444ff',
+        'yellow': '#ffff44'
+    };
+    return colorMap[buttonId] || '#ffffff';
+}
+
+// ===== GAME LOGIC =====
 let buttonColors = ['red', 'blue', 'green', 'yellow'];
 
 let gamePattern = [];
@@ -57,6 +145,14 @@ function checkAnswer(currentLevel){
         }
     } else{
         playSound('wrong');
+        
+        // Create explosion particles on game over
+        for (let i = 0; i < 5; i++) {
+            setTimeout(function() {
+                createParticles(Math.random() * window.innerWidth, Math.random() * window.innerHeight, '#ff0000');
+            }, i * 100);
+        }
+        
         $("body").addClass('game-over');
         $("#level-title").text("Game Over! Press Any Key To Restart");
 
@@ -75,6 +171,9 @@ function nextSequence(){
     // Add level-up animation to title
     let titleElem = $("#level-title");
     titleElem.text("Level " + level).addClass('level-up');
+    
+    // Create celebratory particles on level up
+    createParticles(window.innerWidth / 2, 100, '#ffff00');
     
     // Remove animation class after it completes
     setTimeout(function(){
@@ -160,6 +259,16 @@ function startOver(){
 
 function animatePress(currentColor){
     const button = $("#"+currentColor);
+    
+    // Get button position for particle effects
+    const buttonOffset = button.offset();
+    const buttonWidth = button.outerWidth();
+    const buttonHeight = button.outerHeight();
+    const centerX = buttonOffset.left + buttonWidth / 2;
+    const centerY = buttonOffset.top + buttonHeight / 2;
+    
+    // Create particle burst
+    createParticles(centerX, centerY, getColorForButton(currentColor));
     
     // Add pressed effect
     button.addClass('pressed');
