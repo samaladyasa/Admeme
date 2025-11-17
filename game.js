@@ -132,8 +132,17 @@ function startOver(){
 }
 
 function animatePress(currentColor){
-    $("#"+currentColor).addClass('pressed');
+    const button = $("#"+currentColor);
+    
+    // Add pressed effect
+    button.addClass('pressed');
+    
+    // Trigger character dance
+    const character = button.find('.character');
+    character.addClass('dancing');
+    
     setTimeout(function(){
-        $("#"+currentColor).removeClass('pressed');
-    }, 200);
+        button.removeClass('pressed');
+        character.removeClass('dancing');
+    }, 600);
 }
