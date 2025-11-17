@@ -16,8 +16,15 @@ function startGame(e){
         level = 0;
         gamePattern = [];
         $("#start-btn").hide();
-        $("#level-title").text("Level " + level);
-        nextSequence();
+        $("#level-title").text("Level " + level).addClass('level-up');
+        
+        // Add animation class to container
+        $(".container").addClass('start-animation');
+        
+        setTimeout(function(){
+            $(".container").removeClass('start-animation');
+            nextSequence();
+        }, 600);
     }
 }
 
@@ -64,7 +71,16 @@ function checkAnswer(currentLevel){
 function nextSequence(){
     userClickedPattern = [];
     level++;
-    $("#level-title").text("Level " + level);
+    
+    // Add level-up animation to title
+    let titleElem = $("#level-title");
+    titleElem.text("Level " + level).addClass('level-up');
+    
+    // Remove animation class after it completes
+    setTimeout(function(){
+        titleElem.removeClass('level-up');
+    }, 600);
+    
     let randomNumber = Math.floor(Math.random() * 4);
     let randomChosenColor = buttonColors[randomNumber];
     gamePattern.push(randomChosenColor);
@@ -128,7 +144,18 @@ function startOver(){
     level = 0;
     gamePattern = [];
     started = false;
-    $("#start-btn").show();
+    
+    // Add shake animation on game over
+    $(".container").addClass('shake');
+    setTimeout(function(){
+        $(".container").removeClass('shake');
+    }, 500);
+    
+    // Add animation to button on restart
+    $("#start-btn").show().addClass('restart-animation');
+    setTimeout(function(){
+        $("#start-btn").removeClass('restart-animation');
+    }, 500);
 }
 
 function animatePress(currentColor){

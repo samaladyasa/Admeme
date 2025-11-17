@@ -14,13 +14,46 @@ footer {
   font-size: 3rem;
   margin:  4%;
   color: #FEF2BF;
+  transition: all 0.3s ease;
+  text-shadow: 0 0 10px rgba(254, 242, 191, 0.3);
+}
+
+#level-title.level-up {
+  animation: levelUpPulse 0.6s ease-out;
+}
+
+@keyframes levelUpPulse {
+  0% {
+    transform: scale(1) rotate(0deg);
+    color: #FEF2BF;
+  }
+  50% {
+    transform: scale(1.15) rotate(-2deg);
+    color: #ffff00;
+    text-shadow: 0 0 20px rgba(255, 255, 0, 0.8);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    color: #FEF2BF;
+    text-shadow: 0 0 10px rgba(254, 242, 191, 0.3);
+  }
 }
 
 .container {
   display: block;
   width: 50%;
   margin: auto;
+  transition: all 0.3s ease;
+}
 
+.container.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+  20%, 40%, 60%, 80% { transform: translateX(10px); }
 }
 
 .btn {
@@ -31,6 +64,33 @@ footer {
   border: 10px solid black;
   border-radius: 20%;
   transition: box-shadow 0.08s, background-color 0.08s, transform 0.08s;
+  cursor: pointer;
+  position: relative;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 20%;
+  opacity: 0;
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.5);
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.btn:hover::before {
+  opacity: 1;
+  animation: shimmer 0.6s ease-in-out;
+}
+
+@keyframes shimmer {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .game-over {
@@ -57,6 +117,16 @@ footer {
 .pressed {
   box-shadow: 0 0 20px white;
   background-color: grey;
+  animation: glow 0.2s ease-out;
+}
+
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 10px white;
+  }
+  100% {
+    box-shadow: 0 0 40px white, 0 0 60px rgba(255,255,255,0.5);
+  }
 }
 
 /* Start button */
@@ -71,6 +141,42 @@ footer {
   font-family: 'Press Start 2P', cursive;
   font-size: 0.75rem;
   cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+#start-btn::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+#start-btn:hover::before {
+  opacity: 1;
+  animation: shine 0.6s ease-in-out;
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+#start-btn:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 15px rgba(254, 242, 191, 0.8), 0 0 30px rgba(254, 242, 191, 0.4);
+}
+
+#start-btn:active {
+  transform: scale(0.95);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
 }
 
 @media (max-width: 600px) {
