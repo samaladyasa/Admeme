@@ -85,6 +85,92 @@ function getColorForButton(buttonId) {
     return colorMap[buttonId] || '#ffffff';
 }
 
+// ===== CONFETTI PARTICLES FOR CELEBRATIONS =====
+class ConfettiParticle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.color = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#44ffff'][Math.floor(Math.random() * 6)];
+        this.size = Math.random() * 8 + 4;
+        this.velocity = {
+            x: (Math.random() - 0.5) * 12,
+            y: Math.random() * -15 - 5
+        };
+        this.alpha = 1;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationVelocity = (Math.random() - 0.5) * 0.3;
+    }
+
+    update() {
+        this.x += this.velocity.x;
+        this.y += this.velocity.y;
+        this.velocity.y += 0.2; // gravity
+        this.velocity.x *= 0.99; // air resistance
+        this.alpha -= 0.015;
+        this.rotation += this.rotationVelocity;
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+        ctx.restore();
+    }
+}
+
+function createConfetti(x, y, count = 40) {
+    for (let i = 0; i < count; i++) {
+        particles.push(new ConfettiParticle(x, y));
+    }
+    animateParticles();
+}
+
+// ===== FUN MESSAGES SYSTEM =====
+const funMessages = {
+    start: [
+        'LET\'S GO! 🚀',
+        'GET READY! ⚡',
+        'HERE WE GO! 🎮',
+        'TIME TO PLAY! 🎯',
+        'SHOW YOUR SKILLS! 💪',
+        'LET\'S ROCK! 🎸'
+    ],
+    levelUp: [
+        'AWESOME! 🔥',
+        'NICE MOVES! 💫',
+        'YOU GOT IT! ✨',
+        'KEEP GOING! 🚀',
+        'ON FIRE! 🔥',
+        'LEGENDARY! 👑',
+        'INCREDIBLE! 🌟',
+        'UNSTOPPABLE! 💥'
+    ],
+    gameOver: [
+        'OOPS! 💥',
+        'GAME OVER! 😅',
+        'TRY AGAIN! 🔄',
+        'SO CLOSE! 😬',
+        'BETTER LUCK! 🍀',
+        'YOU CAN DO IT! 💪'
+    ]
+};
+
+function showFunMessage(type) {
+    const messageElem = $('#fun-message');
+    const messages = funMessages[type] || [];
+    if (messages.length === 0) return;
+    
+    const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+    messageElem.text(randomMsg).stop().fadeIn(300);
+    
+    setTimeout(function() {
+        messageElem.fadeOut(500);
+    }, 1500);
+}
+
 // ===== GAME LOGIC =====
 let buttonColors = ['red', 'blue', 'green', 'yellow'];
 
@@ -105,6 +191,10 @@ function startGame(e){
         gamePattern = [];
         $("#start-btn").hide();
         $("#level-title").text("Level " + level).addClass('level-up');
+        
+        // Show fun message and confetti
+        showFunMessage('start');
+        createConfetti(window.innerWidth / 2, 100, 50);
         
         // Add animation class to container
         $(".container").addClass('start-animation');
@@ -146,11 +236,15 @@ function checkAnswer(currentLevel){
     } else{
         playSound('wrong');
         
-        // Create explosion particles on game over
+        // Show game over fun message
+        showFunMessage('gameOver');
+        
+        // Create multiple explosion particles on game over
         for (let i = 0; i < 5; i++) {
             setTimeout(function() {
                 createParticles(Math.random() * window.innerWidth, Math.random() * window.innerHeight, '#ff0000');
-            }, i * 100);
+                createConfetti(Math.random() * window.innerWidth, Math.random() * window.innerHeight, 25);
+            }, i * 150);
         }
         
         $("body").addClass('game-over');
@@ -172,8 +266,12 @@ function nextSequence(){
     let titleElem = $("#level-title");
     titleElem.text("Level " + level).addClass('level-up');
     
-    // Create celebratory particles on level up
-    createParticles(window.innerWidth / 2, 100, '#ffff00');
+    // Show fun message and create celebratory confetti on level up
+    showFunMessage('levelUp');
+    createConfetti(window.innerWidth / 2, 150, 60);
+    
+    // Play victory fanfare!
+    playVictoryFanfare();
     
     // Remove animation class after it completes
     setTimeout(function(){
@@ -237,6 +335,46 @@ function playSound(name){
         // Add a secondary "echo" beep for extra cartoon fun
         playCartoonBeep(sound.end, sound.start, sound.duration * 0.6, sound.duration * 0.1);
     }
+}
+
+// Victory fanfare sound - plays on level up!
+function playVictoryFanfare() {
+    if (!window.audioContext) {
+        window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
+    const ctx = window.audioContext;
+    
+    function playNote(freq, duration, delay) {
+        setTimeout(function(){
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + duration);
+        }, delay);
+    }
+    
+    // Victory fanfare - triumphant notes! (C Major chord progression)
+    const fanfareNotes = [
+        { freq: 523, duration: 0.15, delay: 0 },     // C
+        { freq: 659, duration: 0.15, delay: 100 },   // E
+        { freq: 784, duration: 0.15, delay: 200 },   // G
+        { freq: 1047, duration: 0.3, delay: 300 }    // C (higher)
+    ];
+    
+    fanfareNotes.forEach(note => {
+        playNote(note.freq, note.duration, note.delay);
+    });
 }
 
 function startOver(){
