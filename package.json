@@ -1,0 +1,24 @@
+{
+  "name": "admeme",
+  "version": "1.0.0",
+  "description": "A small Simon-style color memory game built with HTML, CSS and JavaScript.",
+  "main": "game.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samaladyasa/Admeme.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/samaladyasa/Admeme/issues"
+  },
+  "homepage": "https://github.com/samaladyasa/Admeme#readme",
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
+  }
+}
