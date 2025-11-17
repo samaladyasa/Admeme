@@ -1,4 +1,4 @@
-﻿let buttonColors = ['red', 'blue', 'green', 'yellow'];
+let buttonColors = ['red', 'blue', 'green', 'yellow'];
 
 let gamePattern = [];
 let userClickedPattern = [];
@@ -92,7 +92,7 @@ function playSound(name){
             osc.frequency.setValueAtTime(startFreq, ctx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + duration);
             
-            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
             
             osc.connect(gain);
