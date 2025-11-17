@@ -150,9 +150,33 @@ footer {
 /* Character styles */
 .character {
   display: inline-block;
-  font-size: 4rem;
+  font-size: 3.5rem;
+  font-weight: bold;
   margin: 0 auto;
   user-select: none;
+  letter-spacing: 0.1em;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Cartoon character colors */
+.green-char {
+  color: #00ff00;
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.6), 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.red-char {
+  color: #ff1744;
+  text-shadow: 0 0 10px rgba(255, 23, 68, 0.6), 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.yellow-char {
+  color: #ffeb3b;
+  text-shadow: 0 0 10px rgba(255, 235, 59, 0.6), 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.blue-char {
+  color: #00bfff;
+  text-shadow: 0 0 10px rgba(0, 191, 255, 0.6), 2px 2px 4px rgba(0,0,0,0.5);
 }
 
 /* Dance animations for characters */
