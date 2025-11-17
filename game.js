@@ -80,65 +80,65 @@ function playSound(name){
     }
     
     const ctx = window.audioContext;
-    const now = ctx.currentTime;
-    const duration = 0.6;
     
-    // Create multiple oscillators for richer, soothing sound
-    function playNote(freq, gain = 0.15, harmonic1Freq = null, harmonic1Gain = 0.08) {
-        const osc = ctx.createOscillator();
-        const gain_node = ctx.createGain();
-        
-        osc.type = 'sine'; // Smooth sine wave
-        osc.frequency.value = freq;
-        
-        osc.connect(gain_node);
-        gain_node.connect(ctx.destination);
-        
-        // Smooth attack and release for soothing effect
-        gain_node.gain.setValueAtTime(0, now);
-        gain_node.gain.linearRampToValueAtTime(gain, now + 0.08); // Soft attack
-        gain_node.gain.exponentialRampToValueAtTime(0.01, now + duration); // Smooth release
-        
-        osc.start(now);
-        osc.stop(now + duration);
-        
-        // Add optional harmonic for richness
-        if(harmonic1Freq){
-            const harmonic = ctx.createOscillator();
-            const harmonic_gain = ctx.createGain();
+    // Helper function to play a single note
+    function playNote(freq, delay = 0, gain = 0.15, harmonic1Freq = null, harmonic1Gain = 0.08) {
+        setTimeout(function(){
+            const now = ctx.currentTime; // Get time at moment of play
+            const duration = 0.6;
             
-            harmonic.type = 'sine';
-            harmonic.frequency.value = harmonic1Freq;
+            const osc = ctx.createOscillator();
+            const gain_node = ctx.createGain();
             
-            harmonic.connect(harmonic_gain);
-            harmonic_gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = freq;
             
-            harmonic_gain.gain.setValueAtTime(0, now);
-            harmonic_gain.gain.linearRampToValueAtTime(harmonic1Gain, now + 0.08);
-            harmonic_gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+            osc.connect(gain_node);
+            gain_node.connect(ctx.destination);
             
-            harmonic.start(now);
-            harmonic.stop(now + duration);
-        }
+            // Smooth attack and release
+            gain_node.gain.setValueAtTime(0, now);
+            gain_node.gain.linearRampToValueAtTime(gain, now + 0.08);
+            gain_node.gain.exponentialRampToValueAtTime(0.01, now + duration);
+            
+            osc.start(now);
+            osc.stop(now + duration);
+            
+            // Add harmonic
+            if(harmonic1Freq){
+                const harmonic = ctx.createOscillator();
+                const harmonic_gain = ctx.createGain();
+                
+                harmonic.type = 'sine';
+                harmonic.frequency.value = harmonic1Freq;
+                
+                harmonic.connect(harmonic_gain);
+                harmonic_gain.connect(ctx.destination);
+                
+                harmonic_gain.gain.setValueAtTime(0, now);
+                harmonic_gain.gain.linearRampToValueAtTime(harmonic1Gain, now + 0.08);
+                harmonic_gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+                
+                harmonic.start(now);
+                harmonic.stop(now + duration);
+            }
+        }, delay);
     }
     
-    // Soothing, pleasant frequencies for each color (major chord progression)
     const frequencies = {
-        'red': 264,        // C4 - warm base
-        'green': 330,      // E4 - natural middle
-        'blue': 396,       // G4 - bright upper
-        'yellow': 528      // C5 - shimmering high
+        'red': 264,
+        'green': 330,
+        'blue': 396,
+        'yellow': 528
     };
     
     if(name === 'wrong'){
-        // Gentle, descending chime for wrong answer (not harsh buzz)
-        playNote(440, 0.12);  // A4
-        setTimeout(() => playNote(330, 0.12), 100); // E4
-        setTimeout(() => playNote(220, 0.12), 200); // A3
+        playNote(440, 0, 0.12);    // A4
+        playNote(330, 100, 0.12);  // E4
+        playNote(220, 200, 0.12);  // A3
     } else {
-        // Play soothing color tone with harmonic
         const freq = frequencies[name] || 440;
-        playNote(freq, 0.2, freq * 2, 0.1); // Add octave harmonic for richness
+        playNote(freq, 0, 0.2, freq * 2, 0.1);
     }
 }
 
