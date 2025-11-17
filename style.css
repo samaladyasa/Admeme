@@ -150,62 +150,42 @@ footer {
 /* Character styles */
 .character {
   display: inline-block;
-  font-size: 3.8rem;
+  font-size: 2.2rem;
   font-weight: 900;
   margin: 0 auto;
   user-select: none;
   letter-spacing: 0.05em;
-  text-shadow: 
-    0 0 10px rgba(255,255,255,0.9),
-    0 0 20px rgba(255,255,255,0.7),
-    0 0 30px rgba(255,255,255,0.5),
-    2px 2px 5px rgba(0,0,0,0.9);
-  filter: brightness(1.2) contrast(1.4);
+  font-family: monospace;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
 }
 
-/* Robot character colors - VIBRANT & BOLD */
+/* Robot character colors - match button backgrounds */
 .green-char {
-  color: #00ff00;
+  color: #ffffff;
   text-shadow: 
-    0 0 8px rgba(0, 255, 0, 1),
-    0 0 16px rgba(0, 255, 0, 0.9),
-    0 0 24px rgba(0, 255, 0, 0.7),
-    0 0 32px rgba(0, 255, 0, 0.5),
-    2px 2px 6px rgba(0,0,0,0.9);
-  font-family: monospace;
+    1px 1px 2px rgba(0, 100, 0, 0.8),
+    2px 2px 4px rgba(0,0,0,0.8);
 }
 
 .red-char {
-  color: #ff1744;
+  color: #ffffff;
   text-shadow: 
-    0 0 8px rgba(255, 23, 68, 1),
-    0 0 16px rgba(255, 23, 68, 0.9),
-    0 0 24px rgba(255, 23, 68, 0.7),
-    0 0 32px rgba(255, 23, 68, 0.5),
-    2px 2px 6px rgba(0,0,0,0.9);
-  font-family: monospace;
+    1px 1px 2px rgba(139, 0, 0, 0.8),
+    2px 2px 4px rgba(0,0,0,0.8);
 }
 
 .yellow-char {
-  color: #ffff00;
+  color: #333333;
   text-shadow: 
-    0 0 8px rgba(255, 255, 0, 1),
-    0 0 16px rgba(255, 255, 0, 0.9),
-    0 0 24px rgba(255, 255, 0, 0.7),
-    0 0 32px rgba(255, 255, 0, 0.5),
-    2px 2px 6px rgba(0,0,0,0.9);
-  font-family: monospace;
+    1px 1px 2px rgba(200, 150, 0, 0.8),
+    2px 2px 4px rgba(0,0,0,0.3);
 }
 
 .blue-char {
-  color: #00ffff;
+  color: #ffffff;
   text-shadow: 
-    0 0 8px rgba(0, 255, 255, 1),
-    0 0 16px rgba(0, 255, 255, 0.9),
-    0 0 24px rgba(0, 255, 255, 0.7),
-    0 0 32px rgba(0, 255, 255, 0.5),
-    2px 2px 6px rgba(0,0,0,0.9);
-  font-family: monospace;
+    1px 1px 2px rgba(0, 0, 139, 0.8),
+    2px 2px 4px rgba(0,0,0,0.8);
 }
 
 /* Dance animations for characters */
