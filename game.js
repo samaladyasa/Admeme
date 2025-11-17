@@ -1,4 +1,4 @@
-let buttonColors = ['red', 'blue', 'green', 'yellow'];
+﻿let buttonColors = ['red', 'blue', 'green', 'yellow'];
 
 let gamePattern = [];
 let userClickedPattern = [];
@@ -72,7 +72,6 @@ function nextSequence(){
 
     $("#"+randomChosenColor).fadeIn(100).fadeOut(100).fadeIn(100);
     playSound(randomChosenColor);
-}
 
 function playSound(name){
     // Create audio context (use singleton to avoid browser blocking)
@@ -81,34 +80,65 @@ function playSound(name){
     }
     
     const ctx = window.audioContext;
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
+    const now = ctx.currentTime;
+    const duration = 0.6;
     
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    // Create multiple oscillators for richer, soothing sound
+    function playNote(freq, gain = 0.15, harmonic1Freq = null, harmonic1Gain = 0.08) {
+        const osc = ctx.createOscillator();
+        const gain_node = ctx.createGain();
+        
+        osc.type = 'sine'; // Smooth sine wave
+        osc.frequency.value = freq;
+        
+        osc.connect(gain_node);
+        gain_node.connect(ctx.destination);
+        
+        // Smooth attack and release for soothing effect
+        gain_node.gain.setValueAtTime(0, now);
+        gain_node.gain.linearRampToValueAtTime(gain, now + 0.08); // Soft attack
+        gain_node.gain.exponentialRampToValueAtTime(0.01, now + duration); // Smooth release
+        
+        osc.start(now);
+        osc.stop(now + duration);
+        
+        // Add optional harmonic for richness
+        if(harmonic1Freq){
+            const harmonic = ctx.createOscillator();
+            const harmonic_gain = ctx.createGain();
+            
+            harmonic.type = 'sine';
+            harmonic.frequency.value = harmonic1Freq;
+            
+            harmonic.connect(harmonic_gain);
+            harmonic_gain.connect(ctx.destination);
+            
+            harmonic_gain.gain.setValueAtTime(0, now);
+            harmonic_gain.gain.linearRampToValueAtTime(harmonic1Gain, now + 0.08);
+            harmonic_gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+            
+            harmonic.start(now);
+            harmonic.stop(now + duration);
+        }
+    }
     
-    // Frequency map for each color (Hz) - musical notes
+    // Soothing, pleasant frequencies for each color (major chord progression)
     const frequencies = {
-        'red': 261.63,    // C4
-        'green': 329.63,  // E4
-        'blue': 392.00,   // G4
-        'yellow': 523.25  // C5
+        'red': 264,        // C4 - warm base
+        'green': 330,      // E4 - natural middle
+        'blue': 396,       // G4 - bright upper
+        'yellow': 528      // C5 - shimmering high
     };
     
     if(name === 'wrong'){
-        // Play a low buzz for wrong answer
-        oscillator.frequency.value = 100;
-        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-        oscillator.start(ctx.currentTime);
-        oscillator.stop(ctx.currentTime + 0.5);
+        // Gentle, descending chime for wrong answer (not harsh buzz)
+        playNote(440, 0.12);  // A4
+        setTimeout(() => playNote(330, 0.12), 100); // E4
+        setTimeout(() => playNote(220, 0.12), 200); // A3
     } else {
-        // Play the color tone
-        oscillator.frequency.value = frequencies[name] || 440;
-        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-        oscillator.start(ctx.currentTime);
-        oscillator.stop(ctx.currentTime + 0.5);
+        // Play soothing color tone with harmonic
+        const freq = frequencies[name] || 440;
+        playNote(freq, 0.2, freq * 2, 0.1); // Add octave harmonic for richness
     }
 }
 
