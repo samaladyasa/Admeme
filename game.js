@@ -1,8 +1,7 @@
-﻿let buttonColors = ['red', 'blue', 'green', 'yellow'];
+let buttonColors = ['red', 'blue', 'green', 'yellow'];
 
 let gamePattern = [];
 let userClickedPattern = [];
-
 
 let started = false;
 let level = 0;
@@ -72,6 +71,7 @@ function nextSequence(){
 
     $("#"+randomChosenColor).fadeIn(100).fadeOut(100).fadeIn(100);
     playSound(randomChosenColor);
+}
 
 function playSound(name){
     // Create audio context (use singleton to avoid browser blocking)
