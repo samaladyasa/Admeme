@@ -1,4 +1,4 @@
-let buttonColors = ['red', 'blue', 'green', 'yellow'];
+﻿let buttonColors = ['red', 'blue', 'green', 'yellow'];
 
 let gamePattern = [];
 let userClickedPattern = [];
@@ -80,65 +80,47 @@ function playSound(name){
     }
     
     const ctx = window.audioContext;
+    const now = ctx.currentTime;
     
-    // Helper function to play a single note
-    function playNote(freq, delay = 0, gain = 0.15, harmonic1Freq = null, harmonic1Gain = 0.08) {
+    // Create fun cartoon-style sound effect
+    function playCartoonBeep(startFreq, endFreq, duration = 0.3, delay = 0) {
         setTimeout(function(){
-            const now = ctx.currentTime; // Get time at moment of play
-            const duration = 0.6;
-            
             const osc = ctx.createOscillator();
-            const gain_node = ctx.createGain();
+            const gain = ctx.createGain();
             
-            osc.type = 'sine';
-            osc.frequency.value = freq;
+            osc.type = 'square'; // Square wave = more retro/cartoon
+            osc.frequency.setValueAtTime(startFreq, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + duration);
             
-            osc.connect(gain_node);
-            gain_node.connect(ctx.destination);
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
             
-            // Smooth attack and release
-            gain_node.gain.setValueAtTime(0, now);
-            gain_node.gain.linearRampToValueAtTime(gain, now + 0.08);
-            gain_node.gain.exponentialRampToValueAtTime(0.01, now + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
             
-            osc.start(now);
-            osc.stop(now + duration);
-            
-            // Add harmonic
-            if(harmonic1Freq){
-                const harmonic = ctx.createOscillator();
-                const harmonic_gain = ctx.createGain();
-                
-                harmonic.type = 'sine';
-                harmonic.frequency.value = harmonic1Freq;
-                
-                harmonic.connect(harmonic_gain);
-                harmonic_gain.connect(ctx.destination);
-                
-                harmonic_gain.gain.setValueAtTime(0, now);
-                harmonic_gain.gain.linearRampToValueAtTime(harmonic1Gain, now + 0.08);
-                harmonic_gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-                
-                harmonic.start(now);
-                harmonic.stop(now + duration);
-            }
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + duration);
         }, delay);
     }
     
-    const frequencies = {
-        'red': 264,
-        'green': 330,
-        'blue': 396,
-        'yellow': 528
+    // Color button sounds - ascending "boops" with character
+    const cartoonSounds = {
+        'red': { start: 400, end: 600, duration: 0.25 },      // Low to mid boop
+        'green': { start: 600, end: 800, duration: 0.25 },    // Mid boop
+        'blue': { start: 800, end: 1000, duration: 0.25 },    // High boop
+        'yellow': { start: 1000, end: 1200, duration: 0.25 }  // Highest boop
     };
     
     if(name === 'wrong'){
-        playNote(440, 0, 0.12);    // A4
-        playNote(330, 100, 0.12);  // E4
-        playNote(220, 200, 0.12);  // A3
-    } else {
-        const freq = frequencies[name] || 440;
-        playNote(freq, 0, 0.2, freq * 2, 0.1);
+        // Funny descending "failure" sound - like a game over buzzer
+        playCartoonBeep(1200, 200, 0.4, 0);      // Sad descending whoosh
+        playCartoonBeep(150, 100, 0.3, 250);     // Extra sad low buzz
+    } else if(cartoonSounds[name]){
+        const sound = cartoonSounds[name];
+        playCartoonBeep(sound.start, sound.end, sound.duration, 0);
+        
+        // Add a secondary "echo" beep for extra cartoon fun
+        playCartoonBeep(sound.end, sound.start, sound.duration * 0.6, sound.duration * 0.1);
     }
 }
 
