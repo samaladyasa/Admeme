@@ -545,8 +545,15 @@ class GestureDetector {
                 this.handDetected = true;
                 
                 // Update target position (what we're aiming for)
-                this.targetX = indexTip.x * window.innerWidth;
-                this.targetY = indexTip.y * window.innerHeight;
+                // The detector may return keypoints in pixels or normalized (0..1).
+                // Be robust: if values are > 1 assume pixel coords and normalize by video size.
+                const vW = this.video && this.video.videoWidth ? this.video.videoWidth : 200;
+                const vH = this.video && this.video.videoHeight ? this.video.videoHeight : 150;
+                const nx = (indexTip.x > 1) ? (indexTip.x / vW) : indexTip.x;
+                const ny = (indexTip.y > 1) ? (indexTip.y / vH) : indexTip.y;
+                this.targetX = nx * window.innerWidth;
+                this.targetY = ny * window.innerHeight;
+                console.debug('GestureDetector: mapped screen target=', this.targetX, this.targetY, 'videoSize=', vW, vH, 'raw=', indexTip.x, indexTip.y);
                 
                 // Add to trail
                 this.addTrailPoint(this.targetX, this.targetY);
