@@ -474,29 +474,56 @@ class GestureDetector {
 
     async init() {
         try {
-            // Load hand detector model
+            // Show quick status
+            if (this.statusDiv) this.statusDiv.textContent = '🔄 Initializing camera & model...';
+
+            // Prefer WebGL backend for speed when available
+            try {
+                if (window.tf && window.tf.ready) {
+                    await window.tf.ready();
+                    if (window.tf.setBackend) {
+                        // Try webgl backend for faster inference; ignore errors
+                        try { await window.tf.setBackend('webgl'); } catch(e) { /* fall back */ }
+                    }
+                }
+            } catch (e) {
+                console.warn('TF backend warmup failed:', e);
+            }
+
+            // Load a lighter hand detector model to reduce init time and CPU usage
             const detectorConfig = {
                 runtime: 'tfjs',
-                modelType: 'full',
+                modelType: 'lite', // faster startup and inference than 'full'
                 maxHands: 1
             };
+
+            // Create detector (lite model is much faster to initialize)
             this.detector = await window.handPoseDetection.createDetector(
                 window.handPoseDetection.SupportedModels.MediaPipeHands,
                 detectorConfig
             );
-            
-            // Start webcam
+
+            // Start webcam with lower resolution for faster detection
             this.webcamStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 200, height: 150 }
+                video: { width: 160, height: 120, frameRate: { ideal: 30, max: 30 } }
             });
             this.video.srcObject = this.webcamStream;
             this.video.play();
             
             webcamActive = true;
             detector = this;
-            
+
+            // Warm up the model with one estimate (reduces first-frame latency)
+            try {
+                await this.detector.estimateHands(this.video);
+            } catch (e) {
+                console.debug('Warmup estimate failed (non-fatal):', e);
+            }
+
             // Start continuous detection and animation loop
             this.startDetectionLoop();
+
+            if (this.statusDiv) this.statusDiv.textContent = '✅ Camera & model ready';
             return true;
         } catch (error) {
             console.error('Webcam error:', error);
