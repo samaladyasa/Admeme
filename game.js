@@ -568,7 +568,15 @@ class GestureDetector {
 
     updateCursorDisplay(screenX, screenY) {
         const cursor = document.getElementById('gesture-cursor');
-        cursor.style.transform = `translate(${screenX - 25}px, ${screenY - 25}px)`;
+        if (!cursor) {
+            console.error('Cursor element not found!');
+            return;
+        }
+        
+        // Use both transform and direct positioning for better compatibility
+        cursor.style.left = (screenX - 25) + 'px';
+        cursor.style.top = (screenY - 25) + 'px';
+        cursor.style.transform = `translate(0, 0)`; // Reset transform to use left/top
         cursor.style.display = 'block';
         
         // Check if cursor is over any game button and show hover effect
@@ -624,19 +632,24 @@ class GestureDetector {
 
     startAnimationLoop() {
         const animate = () => {
-            // Smooth cursor movement
-            const smoothPos = this.smoothCursorPosition();
-            this.updateCursorDisplay(smoothPos.x, smoothPos.y);
+            // Always update cursor and trail while hand is visible
+            if (this.targetX !== 0 || this.targetY !== 0) {
+                // Smooth cursor movement
+                const smoothPos = this.smoothCursorPosition();
+                this.updateCursorDisplay(smoothPos.x, smoothPos.y);
+                
+                // Draw trail
+                this.drawTrail();
+            }
             
-            // Draw trail
-            this.drawTrail();
-            
+            // Keep animation loop running
             if (webcamActive) {
                 this.animationFrameId = requestAnimationFrame(animate);
             }
         };
         
-        if (webcamActive && !this.animationFrameId) {
+        // Start animation loop immediately
+        if (!this.animationFrameId) {
             this.animationFrameId = requestAnimationFrame(animate);
         }
     }
