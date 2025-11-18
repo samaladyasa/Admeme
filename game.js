@@ -446,6 +446,7 @@ class GestureDetector {
     constructor() {
         this.video = document.getElementById('webcam');
         this.canvas = document.getElementById('gesture-canvas');
+        this.gestureCtx = this.canvas ? this.canvas.getContext('2d') : null;
         this.statusDiv = document.getElementById('gesture-status');
         this.peaceSigns = 0;
         this.lastGestureTime = 0;
@@ -569,6 +570,11 @@ class GestureDetector {
                 const indexTip = hand.keypoints[8]; // Index finger tip
                 console.debug('GestureDetector: indexTip=', indexTip.x, indexTip.y, 'keypoints=', hand.keypoints.length);
                 
+                // Draw landmarks on the gesture canvas for debugging/visual feedback
+                if (this.gestureCtx && this.canvas) {
+                    try { this.drawHand(hand); } catch(e) { console.debug('drawHand error', e); }
+                }
+
                 this.handDetected = true;
                 
                 // Update target position (what we're aiming for)
@@ -597,6 +603,10 @@ class GestureDetector {
                 this.handDetected = false;
                 this.hideCursor();
                 this.trailPoints = [];
+                // Clear gesture canvas when no hand
+                if (this.gestureCtx && this.canvas) {
+                    this.gestureCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                }
             }
         } catch (error) {
             console.error('Detection error:', error);
@@ -687,6 +697,65 @@ class GestureDetector {
             this.trailCtx.beginPath();
             this.trailCtx.arc(point.x, point.y, 8, 0, Math.PI * 2);
             this.trailCtx.fill();
+        });
+    }
+
+    // Draw hand landmarks and connections to the gesture canvas for debugging
+    drawHand(hand) {
+        if (!this.gestureCtx || !this.canvas) return;
+
+        // Resize gesture canvas to match video display size
+        const w = this.canvas.width = this.canvas.clientWidth || 200;
+        const h = this.canvas.height = this.canvas.clientHeight || 150;
+        const ctx = this.gestureCtx;
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw connections (MediaPipe hand connections)
+        const connections = [
+            [0,1],[1,2],[2,3],[3,4],       // thumb
+            [0,5],[5,6],[6,7],[7,8],       // index
+            [0,9],[9,10],[10,11],[11,12],  // middle
+            [0,13],[13,14],[14,15],[15,16],// ring
+            [0,17],[17,18],[18,19],[19,20] // pinky
+        ];
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(0,255,255,0.9)';
+        ctx.fillStyle = 'rgba(0,255,255,0.9)';
+
+        // keypoints may be in pixels or normalized; map to canvas
+        const vW = this.video && this.video.videoWidth ? this.video.videoWidth : 200;
+        const vH = this.video && this.video.videoHeight ? this.video.videoHeight : 150;
+
+        const mapX = (x) => (x > 1 ? (x / vW) * w : x * w);
+        const mapY = (y) => (y > 1 ? (y / vH) * h : y * h);
+
+        // Draw connections
+        connections.forEach(pair => {
+            const a = hand.keypoints[pair[0]];
+            const b = hand.keypoints[pair[1]];
+            if (!a || !b) return;
+            ctx.beginPath();
+            ctx.moveTo(mapX(a.x), mapY(a.y));
+            ctx.lineTo(mapX(b.x), mapY(b.y));
+            ctx.stroke();
+        });
+
+        // Draw keypoints
+        hand.keypoints.forEach((kp, i) => {
+            const x = mapX(kp.x);
+            const y = mapY(kp.y);
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            // Highlight index tip
+            if (i === 8) {
+                ctx.fillStyle = 'rgba(255,165,0,0.95)';
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(0,255,255,0.9)';
+            }
         });
     }
 
