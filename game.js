@@ -500,7 +500,22 @@ class GestureDetector {
             return true;
         } catch (error) {
             console.error('Webcam error:', error);
-            this.statusDiv.textContent = '❌ Camera denied';
+            
+            // Provide more specific error messages
+            let errorMessage = '❌ Camera denied';
+            
+            if (error.name === 'NotAllowedError') {
+                errorMessage = '❌ Permission denied - Allow camera access in browser settings';
+            } else if (error.name === 'NotFoundError') {
+                errorMessage = '❌ No camera found';
+            } else if (error.name === 'NotReadableError') {
+                errorMessage = '❌ Camera is in use by another app';
+            } else if (error.message) {
+                errorMessage = `❌ ${error.message}`;
+            }
+            
+            this.statusDiv.textContent = errorMessage;
+            console.log('💡 Tip: Check your browser camera permissions settings');
             return false;
         }
     }
@@ -814,7 +829,12 @@ $(document).ready(function() {
                 $('#webcam-mode-btn').text('🎥 Hide').css('background', '#00ff00').css('color', '#011F3F');
                 $('#gesture-status').text('✋ Show hand to start!');
                 console.log('✅ Gesture control active! Show peace sign (✌️) to start game.');
-            }
+                } else {
+                    // Camera permission denied - provide helpful instructions
+                    $('#webcam-container').show();
+                    $('#webcam-mode-btn').text('🎥 Show').css('background', '#247ba0').css('color', '#FEF2BF');
+                    console.log('💡 Camera access denied. To enable:\n1. Click the camera/lock icon in your browser address bar\n2. Select "Allow" for camera permissions\n3. Refresh the page');
+                }
         } catch (error) {
             console.error('Gesture detection failed:', error);
             $('#gesture-status').text('❌ Camera not available');
