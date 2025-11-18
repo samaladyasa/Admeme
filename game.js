@@ -491,6 +491,11 @@ class GestureDetector {
 
             if (hands.length > 0) {
                 const hand = hands[0];
+                const indexTip = hand.keypoints[8]; // Index finger tip
+                
+                // Track cursor position based on index finger
+                this.updateCursorPosition(indexTip);
+                
                 const gesture = this.recognizeGesture(hand.keypoints);
                 
                 if (gesture && Date.now() - this.lastGestureTime > this.gestureThreshold) {
@@ -500,6 +505,7 @@ class GestureDetector {
                 }
             } else {
                 this.statusDiv.textContent = 'Show hand ✋';
+                this.hideCursor();
             }
         } catch (error) {
             console.error('Detection error:', error);
@@ -509,6 +515,46 @@ class GestureDetector {
             // Increase delay between detections to reduce lag (every 100ms instead of 33ms)
             setTimeout(() => this.detectGestures(), 100);
         }
+    }
+
+    updateCursorPosition(fingerTip) {
+        // Map finger position from webcam coordinates to screen coordinates
+        // The video is 200x150, we need to map it to the full screen
+        const cursor = document.getElementById('gesture-cursor');
+        
+        // X: 0 to 1 maps to 0 to window.innerWidth
+        // Y: 0 to 1 maps to 0 to window.innerHeight
+        const screenX = fingerTip.x * window.innerWidth;
+        const screenY = fingerTip.y * window.innerHeight;
+        
+        // Update cursor position
+        cursor.style.left = (screenX - 20) + 'px'; // -20 to center the cursor
+        cursor.style.top = (screenY - 20) + 'px';
+        cursor.style.display = 'block';
+        
+        // Check if cursor is over any game button and show hover effect
+        this.checkButtonHover(screenX, screenY);
+    }
+
+    hideCursor() {
+        document.getElementById('gesture-cursor').style.display = 'none';
+    }
+
+    checkButtonHover(x, y) {
+        // Get all buttons
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach(btn => {
+            const rect = btn.getBoundingClientRect();
+            const isHovering = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+            
+            if (isHovering) {
+                btn.style.filter = 'brightness(1.2)';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.style.filter = '';
+                btn.style.cursor = 'default';
+            }
+        });
     }
 
     recognizeGesture(keypoints) {
@@ -578,6 +624,7 @@ class GestureDetector {
 
     stop() {
         webcamActive = false;
+        this.hideCursor();
         if (this.webcamStream) {
             this.webcamStream.getTracks().forEach(track => track.stop());
         }
