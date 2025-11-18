@@ -5,7 +5,7 @@ body {
   background-attachment: fixed;
   min-height: 100vh;
   overflow-x: hidden;
-  animation: backgroundShift 15s ease-in-out infinite;
+  animation: backgroundShift 25s ease-in-out infinite;
 }
 
 @keyframes backgroundShift {
@@ -31,7 +31,9 @@ footer {
   transition: all 0.3s ease;
   text-shadow: 0 0 10px rgba(254, 242, 191, 0.3), 0 0 20px rgba(0, 255, 255, 0.2);
   letter-spacing: 2px;
-  animation: titleGlow 3s ease-in-out infinite;
+  animation: titleGlow 5s ease-in-out infinite;
+  will-change: text-shadow;
+  backface-visibility: hidden;
 }
 
 @keyframes titleGlow {
@@ -100,7 +102,10 @@ footer {
   cursor: pointer;
   position: relative;
   box-shadow: 0 0 30px rgba(255, 255, 255, 0.1), inset 0 0 20px rgba(0,0,0,0.3);
-  animation: buttonFloat 3s ease-in-out infinite;
+  animation: buttonFloat 4s ease-in-out infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 @keyframes buttonFloat {
@@ -234,7 +239,7 @@ footer {
   position: relative;
   overflow: hidden;
   box-shadow: 0 0 20px rgba(254, 242, 191, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.5);
-  animation: buttonPulse 2s ease-in-out infinite;
+  animation: buttonPulse 3s ease-in-out infinite;
 }
 
 @keyframes buttonPulse {

@@ -1,4 +1,4 @@
-// ===== PARTICLE EFFECTS SYSTEM =====
+// ===== PARTICLE EFFECTS SYSTEM (OPTIMIZED) =====
 class Particle {
     constructor(x, y, color) {
         this.x = x;
@@ -16,25 +16,25 @@ class Particle {
     update() {
         this.x += this.velocity.x;
         this.y += this.velocity.y;
-        this.velocity.y += 0.1; // gravity
-        this.velocity.x *= 0.98; // air resistance
+        this.velocity.y += 0.1;
+        this.velocity.x *= 0.98;
         this.alpha -= this.decay;
     }
 
     draw(ctx) {
-        ctx.save();
         ctx.globalAlpha = this.alpha;
         ctx.fillStyle = this.color;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
     }
 }
 
 let particles = [];
 let particleCanvas = document.getElementById('particle-canvas');
 let particleCtx = particleCanvas ? particleCanvas.getContext('2d') : null;
+let animationFrameId = null;
+let isAnimating = false;
 
 // Set canvas size
 if (particleCanvas) {
@@ -46,11 +46,17 @@ if (particleCanvas) {
     });
 }
 
-// Animation loop for particles
+// Optimized animation loop for particles
 function animateParticles() {
     if (!particleCtx) return;
     
+    if (particles.length === 0) {
+        isAnimating = false;
+        return;
+    }
+    
     particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+    particleCtx.save();
     
     for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].update();
@@ -61,17 +67,24 @@ function animateParticles() {
         }
     }
     
+    particleCtx.restore();
+    
     if (particles.length > 0) {
-        requestAnimationFrame(animateParticles);
+        animationFrameId = requestAnimationFrame(animateParticles);
+    } else {
+        isAnimating = false;
     }
 }
 
 function createParticles(x, y, color) {
-    const count = Math.floor(Math.random() * 15 + 20); // 20-35 particles
+    const count = Math.floor(Math.random() * 8 + 10); // 10-18 particles (reduced from 20-35)
     for (let i = 0; i < count; i++) {
         particles.push(new Particle(x, y, color));
     }
-    animateParticles();
+    if (!isAnimating) {
+        isAnimating = true;
+        animateParticles();
+    }
 }
 
 // Get color for particles
@@ -111,21 +124,24 @@ class ConfettiParticle {
     }
 
     draw(ctx) {
-        ctx.save();
         ctx.globalAlpha = this.alpha;
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rotation);
         ctx.fillStyle = this.color;
         ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
-        ctx.restore();
+        ctx.translate(-this.x, -this.y);
     }
 }
 
-function createConfetti(x, y, count = 40) {
-    for (let i = 0; i < count; i++) {
+function createConfetti(x, y, count = 20) {
+    const adjustedCount = Math.min(count, 25); // Cap at 25 confetti pieces
+    for (let i = 0; i < adjustedCount; i++) {
         particles.push(new ConfettiParticle(x, y));
     }
-    animateParticles();
+    if (!isAnimating) {
+        isAnimating = true;
+        animateParticles();
+    }
 }
 
 // ===== FUN MESSAGES SYSTEM =====
@@ -490,7 +506,8 @@ class GestureDetector {
         }
 
         if (webcamActive) {
-            requestAnimationFrame(() => this.detectGestures());
+            // Increase delay between detections to reduce lag (every 100ms instead of 33ms)
+            setTimeout(() => this.detectGestures(), 100);
         }
     }
 
