@@ -587,13 +587,15 @@ class GestureDetector {
 
 // Webcam button handlers
 $('#webcam-mode-btn').on('click', async function() {
-    if (!webcamActive) {
-        const gestureDetector = new GestureDetector();
-        if (await gestureDetector.init()) {
-            $('#webcam-container').show();
-            $(this).text('🎥 Active');
-            $(this).css('background', '#00ff00');
-        }
+    const container = $('#webcam-container');
+    if (container.is(':visible')) {
+        // Hide webcam
+        container.hide();
+        $(this).text('🎥 Show').css('background', '#247ba0').css('color', '#FEF2BF');
+    } else {
+        // Show webcam
+        container.show();
+        $(this).text('🎥 Hide').css('background', '#00ff00').css('color', '#011F3F');
     }
 });
 
@@ -603,7 +605,7 @@ $('#toggle-webcam-btn').on('click', function() {
     if (canvas.style.display === 'none') {
         canvas.style.display = 'block';
         video.style.display = 'none';
-        $(this).text('📷 Video');
+        $(this).text('📷 Canvas');
     } else {
         canvas.style.display = 'none';
         video.style.display = 'block';
@@ -612,9 +614,29 @@ $('#toggle-webcam-btn').on('click', function() {
 });
 
 $('#close-webcam-btn').on('click', function() {
-    if (detector) {
-        detector.stop();
-    }
+    // Just hide the container, keep gesture detection running
     $('#webcam-container').hide();
-    $('#webcam-mode-btn').text('🎥 Gesture Control').css('background', '#247ba0');
+    $('#webcam-mode-btn').text('🎥 Show').css('background', '#247ba0').css('color', '#FEF2BF');
 });
+
+// ===== AUTO-START GESTURE DETECTION ON PAGE LOAD =====
+$(document).ready(function() {
+    // Auto-initialize gesture control on page load
+    setTimeout(async function() {
+        try {
+            const gestureDetector = new GestureDetector();
+            const initialized = await gestureDetector.init();
+            
+            if (initialized) {
+                $('#webcam-container').show();
+                $('#webcam-mode-btn').text('🎥 Hide').css('background', '#00ff00').css('color', '#011F3F');
+                $('#gesture-status').text('✋ Show hand to start!');
+                console.log('✅ Gesture control active! Show peace sign (✌️) to start game.');
+            }
+        } catch (error) {
+            console.error('Gesture detection failed:', error);
+            $('#gesture-status').text('❌ Camera not available');
+        }
+    }, 800); // Small delay to ensure DOM is ready
+});
+
