@@ -529,11 +529,18 @@ class GestureDetector {
         if (!webcamActive || !this.detector) return;
 
         try {
+            // Debug: verify detector exists
+            if (!this.detector) {
+                console.warn('GestureDetector: detector not initialized');
+            }
+            console.debug('GestureDetector: estimating hands...');
             const hands = await this.detector.estimateHands(this.video);
+            console.debug('GestureDetector: hands.length =', hands.length);
 
             if (hands.length > 0) {
                 const hand = hands[0];
                 const indexTip = hand.keypoints[8]; // Index finger tip
+                console.debug('GestureDetector: indexTip=', indexTip.x, indexTip.y, 'keypoints=', hand.keypoints.length);
                 
                 this.handDetected = true;
                 
