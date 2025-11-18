@@ -420,3 +420,184 @@ function animatePress(currentColor){
         character.removeClass('dancing');
     }, 600);
 }
+
+// ===== WEBCAM GESTURE DETECTION SYSTEM =====
+let webcamActive = false;
+let detector = null;
+let webcamStream = null;
+
+class GestureDetector {
+    constructor() {
+        this.video = document.getElementById('webcam');
+        this.canvas = document.getElementById('gesture-canvas');
+        this.statusDiv = document.getElementById('gesture-status');
+        this.peaceSigns = 0;
+        this.lastGestureTime = 0;
+        this.gestureThreshold = 500; // ms between detections
+    }
+
+    async init() {
+        try {
+            // Load hand detector model
+            const detectorConfig = {
+                runtime: 'tfjs',
+                modelType: 'full',
+                maxHands: 1
+            };
+            this.detector = await window.handPoseDetection.createDetector(
+                window.handPoseDetection.SupportedModels.MediaPipeHands,
+                detectorConfig
+            );
+            
+            // Start webcam
+            this.webcamStream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 200, height: 150 }
+            });
+            this.video.srcObject = this.webcamStream;
+            this.video.play();
+            
+            webcamActive = true;
+            detector = this;
+            this.detectGestures();
+            return true;
+        } catch (error) {
+            console.error('Webcam error:', error);
+            this.statusDiv.textContent = '❌ Camera denied';
+            return false;
+        }
+    }
+
+    async detectGestures() {
+        if (!webcamActive || !this.detector) return;
+
+        try {
+            const hands = await this.detector.estimateHands(this.video);
+
+            if (hands.length > 0) {
+                const hand = hands[0];
+                const gesture = this.recognizeGesture(hand.keypoints);
+                
+                if (gesture && Date.now() - this.lastGestureTime > this.gestureThreshold) {
+                    this.lastGestureTime = Date.now();
+                    this.statusDiv.textContent = gesture.name;
+                    this.handleGesture(gesture);
+                }
+            } else {
+                this.statusDiv.textContent = 'Show hand ✋';
+            }
+        } catch (error) {
+            console.error('Detection error:', error);
+        }
+
+        if (webcamActive) {
+            requestAnimationFrame(() => this.detectGestures());
+        }
+    }
+
+    recognizeGesture(keypoints) {
+        // Get hand landmarks
+        const wrist = keypoints[0];
+        const thumbTip = keypoints[4];
+        const indexTip = keypoints[8];
+        const middleTip = keypoints[12];
+        const ringTip = keypoints[16];
+        const pinkyTip = keypoints[20];
+
+        // Helper: calculate distance between two points
+        const distance = (p1, p2) => {
+            return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+        };
+
+        // Helper: check if finger is extended (tip is above base)
+        const isFingerExtended = (tip, base) => tip.y < base.y - 20;
+
+        // Get finger states
+        const thumbUp = thumbTip.y < keypoints[2].y;
+        const indexUp = isFingerExtended(indexTip, keypoints[6]);
+        const middleUp = isFingerExtended(middleTip, keypoints[10]);
+        const ringUp = isFingerExtended(ringTip, keypoints[14]);
+        const pinkyUp = isFingerExtended(pinkyTip, keypoints[18]);
+
+        // Recognize gestures
+        
+        // PEACE SIGN (Index + Middle up, others down)
+        if (!thumbUp && indexUp && middleUp && !ringUp && !pinkyUp) {
+            return { name: 'PEACE ✌️ - START!', action: 'start' };
+        }
+
+        // OPEN HAND / STOP (All fingers extended)
+        if (thumbUp && indexUp && middleUp && ringUp && pinkyUp) {
+            return { name: 'STOP ✋', action: 'stop' };
+        }
+
+        // THUMBS UP (Thumb up, fingers down)
+        if (thumbUp && !indexUp && !middleUp && !ringUp && !pinkyUp) {
+            return { name: 'THUMBS UP 👍', action: 'thumbsUp' };
+        }
+
+        // FIST (All fingers closed)
+        if (!thumbUp && !indexUp && !middleUp && !ringUp && !pinkyUp) {
+            return { name: 'FIST 👊', action: 'fist' };
+        }
+
+        // POINTER (Index up only)
+        if (!thumbUp && indexUp && !middleUp && !ringUp && !pinkyUp) {
+            return { name: 'POINT 👉', action: 'point' };
+        }
+
+        return null;
+    }
+
+    handleGesture(gesture) {
+        if (gesture.action === 'start' && !started) {
+            startGame();
+            this.statusDiv.textContent = '🎮 STARTED!';
+        } else if (gesture.action === 'thumbsUp') {
+            createConfetti(Math.random() * window.innerWidth, 100, 30);
+        } else if (gesture.action === 'fist') {
+            showFunMessage('start');
+        }
+    }
+
+    stop() {
+        webcamActive = false;
+        if (this.webcamStream) {
+            this.webcamStream.getTracks().forEach(track => track.stop());
+        }
+        this.video.srcObject = null;
+    }
+}
+
+// Webcam button handlers
+$('#webcam-mode-btn').on('click', async function() {
+    if (!webcamActive) {
+        const gestureDetector = new GestureDetector();
+        if (await gestureDetector.init()) {
+            $('#webcam-container').show();
+            $(this).text('🎥 Active');
+            $(this).css('background', '#00ff00');
+        }
+    }
+});
+
+$('#toggle-webcam-btn').on('click', function() {
+    const canvas = document.getElementById('gesture-canvas');
+    const video = document.getElementById('webcam');
+    if (canvas.style.display === 'none') {
+        canvas.style.display = 'block';
+        video.style.display = 'none';
+        $(this).text('📷 Video');
+    } else {
+        canvas.style.display = 'none';
+        video.style.display = 'block';
+        $(this).text('📹 Webcam');
+    }
+});
+
+$('#close-webcam-btn').on('click', function() {
+    if (detector) {
+        detector.stop();
+    }
+    $('#webcam-container').hide();
+    $('#webcam-mode-btn').text('🎥 Gesture Control').css('background', '#247ba0');
+});
