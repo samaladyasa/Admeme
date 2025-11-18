@@ -456,6 +456,7 @@ class GestureDetector {
         this.cursorY = 0;
         this.targetX = 0;
         this.targetY = 0;
+        this.handDetected = false; // Track if hand is currently visible
         this.trailPoints = [];
         this.maxTrailLength = 15;
         this.smoothingFactor = 0.15; // Lower = smoother (0.05-0.3)
@@ -519,6 +520,8 @@ class GestureDetector {
                 const hand = hands[0];
                 const indexTip = hand.keypoints[8]; // Index finger tip
                 
+                this.handDetected = true;
+                
                 // Update target position (what we're aiming for)
                 this.targetX = indexTip.x * window.innerWidth;
                 this.targetY = indexTip.y * window.innerHeight;
@@ -535,6 +538,7 @@ class GestureDetector {
                 }
             } else {
                 this.statusDiv.textContent = 'Show hand ✋';
+                this.handDetected = false;
                 this.hideCursor();
                 this.trailPoints = [];
             }
@@ -632,8 +636,8 @@ class GestureDetector {
 
     startAnimationLoop() {
         const animate = () => {
-            // Always update cursor and trail while hand is visible
-            if (this.targetX !== 0 || this.targetY !== 0) {
+            // Update cursor when hand is detected
+            if (this.handDetected) {
                 // Smooth cursor movement
                 const smoothPos = this.smoothCursorPosition();
                 this.updateCursorDisplay(smoothPos.x, smoothPos.y);
