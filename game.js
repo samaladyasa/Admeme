@@ -450,6 +450,25 @@ class GestureDetector {
         this.peaceSigns = 0;
         this.lastGestureTime = 0;
         this.gestureThreshold = 500; // ms between detections
+        
+        // Smoothing and trail tracking
+        this.cursorX = 0;
+        this.cursorY = 0;
+        this.targetX = 0;
+        this.targetY = 0;
+        this.trailPoints = [];
+        this.maxTrailLength = 15;
+        this.smoothingFactor = 0.15; // Lower = smoother (0.05-0.3)
+        
+        // Trail canvas setup
+        this.trailCanvas = document.getElementById('finger-trail-canvas');
+        this.trailCtx = this.trailCanvas ? this.trailCanvas.getContext('2d') : null;
+        if (this.trailCanvas) {
+            this.trailCanvas.width = window.innerWidth;
+            this.trailCanvas.height = window.innerHeight;
+        }
+        
+        this.animationFrameId = null;
     }
 
     async init() {
@@ -474,7 +493,9 @@ class GestureDetector {
             
             webcamActive = true;
             detector = this;
-            this.detectGestures();
+            
+            // Start continuous detection and animation loop
+            this.startDetectionLoop();
             return true;
         } catch (error) {
             console.error('Webcam error:', error);
@@ -483,7 +504,12 @@ class GestureDetector {
         }
     }
 
-    async detectGestures() {
+    startDetectionLoop() {
+        // Separate loops: fast detection + smooth animation
+        this.gestureDetectionLoop();
+    }
+
+    async gestureDetectionLoop() {
         if (!webcamActive || !this.detector) return;
 
         try {
@@ -493,8 +519,12 @@ class GestureDetector {
                 const hand = hands[0];
                 const indexTip = hand.keypoints[8]; // Index finger tip
                 
-                // Track cursor position based on index finger
-                this.updateCursorPosition(indexTip);
+                // Update target position (what we're aiming for)
+                this.targetX = indexTip.x * window.innerWidth;
+                this.targetY = indexTip.y * window.innerHeight;
+                
+                // Add to trail
+                this.addTrailPoint(this.targetX, this.targetY);
                 
                 const gesture = this.recognizeGesture(hand.keypoints);
                 
@@ -506,38 +536,114 @@ class GestureDetector {
             } else {
                 this.statusDiv.textContent = 'Show hand ✋';
                 this.hideCursor();
+                this.trailPoints = [];
             }
         } catch (error) {
             console.error('Detection error:', error);
         }
 
         if (webcamActive) {
-            // Increase delay between detections to reduce lag (every 100ms instead of 33ms)
-            setTimeout(() => this.detectGestures(), 100);
+            // Detect gestures at 30fps (every 33ms)
+            setTimeout(() => this.gestureDetectionLoop(), 33);
         }
     }
 
-    updateCursorPosition(fingerTip) {
-        // Map finger position from webcam coordinates to screen coordinates
-        // The video is 200x150, we need to map it to the full screen
+    addTrailPoint(x, y) {
+        this.trailPoints.push({ x, y, alpha: 1 });
+        if (this.trailPoints.length > this.maxTrailLength) {
+            this.trailPoints.shift();
+        }
+    }
+
+    smoothCursorPosition() {
+        // Exponential smoothing for fluid cursor movement
+        this.cursorX += (this.targetX - this.cursorX) * this.smoothingFactor;
+        this.cursorY += (this.targetY - this.cursorY) * this.smoothingFactor;
+        
+        return {
+            x: Math.round(this.cursorX),
+            y: Math.round(this.cursorY)
+        };
+    }
+
+    updateCursorDisplay(screenX, screenY) {
         const cursor = document.getElementById('gesture-cursor');
-        
-        // X: 0 to 1 maps to 0 to window.innerWidth
-        // Y: 0 to 1 maps to 0 to window.innerHeight
-        const screenX = fingerTip.x * window.innerWidth;
-        const screenY = fingerTip.y * window.innerHeight;
-        
-        // Update cursor position
-        cursor.style.left = (screenX - 20) + 'px'; // -20 to center the cursor
-        cursor.style.top = (screenY - 20) + 'px';
+        cursor.style.transform = `translate(${screenX - 25}px, ${screenY - 25}px)`;
         cursor.style.display = 'block';
         
         // Check if cursor is over any game button and show hover effect
         this.checkButtonHover(screenX, screenY);
     }
 
+    drawTrail() {
+        if (!this.trailCtx || this.trailPoints.length === 0) return;
+        
+        // Clear canvas
+        this.trailCtx.clearRect(0, 0, this.trailCanvas.width, this.trailCanvas.height);
+        
+        // Fade trail points over time
+        this.trailPoints.forEach((point, index) => {
+            point.alpha -= 0.05; // Fade effect
+        });
+        
+        // Remove fully faded points
+        this.trailPoints = this.trailPoints.filter(p => p.alpha > 0);
+        
+        if (this.trailPoints.length < 2) return;
+        
+        // Draw smooth line through trail points
+        this.trailCtx.strokeStyle = `rgba(0, 255, 255, 0.6)`;
+        this.trailCtx.lineWidth = 4;
+        this.trailCtx.lineCap = 'round';
+        this.trailCtx.lineJoin = 'round';
+        this.trailCtx.globalAlpha = 1;
+        
+        this.trailCtx.beginPath();
+        this.trailCtx.moveTo(this.trailPoints[0].x, this.trailPoints[0].y);
+        
+        // Draw with variable transparency
+        for (let i = 1; i < this.trailPoints.length; i++) {
+            const point = this.trailPoints[i];
+            const alpha = (i / this.trailPoints.length) * 0.7;
+            
+            this.trailCtx.strokeStyle = `rgba(0, 255, 255, ${alpha})`;
+            this.trailCtx.beginPath();
+            this.trailCtx.moveTo(this.trailPoints[i-1].x, this.trailPoints[i-1].y);
+            this.trailCtx.lineTo(point.x, point.y);
+            this.trailCtx.stroke();
+        }
+        
+        // Draw glow effect dots at trail points
+        this.trailCtx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+        this.trailPoints.forEach(point => {
+            this.trailCtx.beginPath();
+            this.trailCtx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+            this.trailCtx.fill();
+        });
+    }
+
+    startAnimationLoop() {
+        const animate = () => {
+            // Smooth cursor movement
+            const smoothPos = this.smoothCursorPosition();
+            this.updateCursorDisplay(smoothPos.x, smoothPos.y);
+            
+            // Draw trail
+            this.drawTrail();
+            
+            if (webcamActive) {
+                this.animationFrameId = requestAnimationFrame(animate);
+            }
+        };
+        
+        if (webcamActive && !this.animationFrameId) {
+            this.animationFrameId = requestAnimationFrame(animate);
+        }
+    }
+
     hideCursor() {
         document.getElementById('gesture-cursor').style.display = 'none';
+        this.trailPoints = [];
     }
 
     checkButtonHover(x, y) {
@@ -548,7 +654,7 @@ class GestureDetector {
             const isHovering = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
             
             if (isHovering) {
-                btn.style.filter = 'brightness(1.2)';
+                btn.style.filter = 'brightness(1.2) drop-shadow(0 0 10px rgba(255, 255, 0, 0.8))';
                 btn.style.cursor = 'pointer';
             } else {
                 btn.style.filter = '';
@@ -556,6 +662,7 @@ class GestureDetector {
             }
         });
     }
+
 
     recognizeGesture(keypoints) {
         // Get hand landmarks
@@ -625,10 +732,18 @@ class GestureDetector {
     stop() {
         webcamActive = false;
         this.hideCursor();
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+        }
         if (this.webcamStream) {
             this.webcamStream.getTracks().forEach(track => track.stop());
         }
         this.video.srcObject = null;
+        
+        // Clear trail canvas
+        if (this.trailCtx) {
+            this.trailCtx.clearRect(0, 0, this.trailCanvas.width, this.trailCanvas.height);
+        }
     }
 }
 
@@ -675,6 +790,9 @@ $(document).ready(function() {
             const initialized = await gestureDetector.init();
             
             if (initialized) {
+                // Start smooth animation loop for cursor and trails
+                gestureDetector.startAnimationLoop();
+                
                 $('#webcam-container').show();
                 $('#webcam-mode-btn').text('🎥 Hide').css('background', '#00ff00').css('color', '#011F3F');
                 $('#gesture-status').text('✋ Show hand to start!');
